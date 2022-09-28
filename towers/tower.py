@@ -4,19 +4,72 @@ import pygame
 
 towers_sprites = pygame.sprite.Group()
 
+class Vec2:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+    def __add__(self, other):
+        if isinstance(other, Vec2):
+            return Vec2(self.x + other.x, self.y + other.y)
+    def __sub__(self, other):
+        if isinstance(other, Vec2):
+            return Vec2(self.x - other.x, self.y - other.y)
+
+    def __mul__(self, other):
+        if isinstance(other, Vec2):
+            return self.x * other.x + self.y * other.y
+        elif isinstance(other, float) or isinstance(other, int):
+            return Vec2(self.x * other, self.y * other)
+    def __truediv__(self, other):
+        if isinstance(other, float) or isinstance(other, int):
+            return Vec2(self.x / other, self.y / other)
+
+    def dist_to(self, other):
+        return Vec2(abs(self.x - other.x), abs(self.y - other.y))
+    @property
+    def length(self):
+        return sqrt(self * self)
+
+class Circle:
+    def __init__(self, pos, r):
+        self.pos = pos
+        self.r = r
+    def intersects(self, val):
+        if (isinstance(val, Rect)):
+            return self.intersects_rect(val)
+    def intersects_rect(self, rect):
+        dr = self.pos.dist_to(rect.center)
+        if dr.x > rect.size.x / 2 + self.r or dr.y > rect.size.y / 2 + self.r: 
+            return False
+        if dr.x <= rect.size.x / 2 or dr.y <= rect.size.y / 2:
+            return True
+        return (dr - rect.size / 2).length <= self.r
+
+
+class Rect:
+    def __init__(self, pgRect):
+        self.pos = Vec2(pgRect.x, pgRect.y)
+        self.size = Vec2(pgRect.w, pgRect.h)
+
+    @property
+    def center(self):
+        return self.pos + (self.size / 2)
 
 # function collide rect and circle
-def intersects(rect, r, center):
-    circle_distance_x = abs(center[0] - rect.centerx)
-    circle_distance_y = abs(center[1] - rect.centery)
-    if circle_distance_x > rect.w / 2.0 + r or circle_distance_y > rect.h / 2.0 + r:
-        return False
-    if circle_distance_x <= rect.w / 2.0 or circle_distance_y <= rect.h / 2.0:
-        return True
-    corner_x = circle_distance_x - rect.w / 2.0
-    corner_y = circle_distance_y - rect.h / 2.0
-    corner_distance_sq = corner_x ** 2.0 + corner_y ** 2.0
-    return corner_distance_sq <= r ** 2.0
+def intersects(pgRect, r, center):
+    circle = Circle(Vec2(center[0], center[1]), r)
+    rect = Rect(pgRect)
+    return circle.intersects(rect)
+    # circle_distance_x = abs(center[0] - rect.centerx)
+    # circle_distance_y = abs(center[1] - rect.centery)
+    # if circle_distance_x > rect.w / 2.0 + r or circle_distance_y > rect.h / 2.0 + r:
+    #     return False
+    # if circle_distance_x <= rect.w / 2.0 or circle_distance_y <= rect.h / 2.0:
+    #     return True
+    # corner_x = circle_distance_x - rect.w / 2.0
+    # corner_y = circle_distance_y - rect.h / 2.0
+    # corner_distance_sq = corner_x ** 2.0 + corner_y ** 2.0
+    # return corner_distance_sq <= r ** 2.0
 
 
 class Tower(pygame.sprite.Sprite):
